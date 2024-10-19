@@ -50,68 +50,53 @@ void on_package_selected(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewC
     }
 }
 
-// // Install button callback
-// void on_install_clicked(GtkWidget *widget, gpointer data) {
-//     g_print("Installing package...\n");
-//     const char *command = "echo 'Installing package...' && sudo pacman -S --noconfirm <package-name>\n";
-//     vte_terminal_feed_child(VTE_TERMINAL(terminal), command, -1);
-// }
 
-// // Uninstall button callback
-// void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
-//     g_print("Uninstalling package...\n");
-//     const char *command = "echo 'Uninstalling package...' && sudo pacman -R --noconfirm <package-name>\n";
-//     vte_terminal_feed_child(VTE_TERMINAL(terminal), command, -1);
-// }
+
 
 void on_install_clicked(GtkWidget *widget, gpointer data) {
-    g_print("Installing package...\n");
-    
-    // The command that will be executed when the package is installed
-    const char *command[] = { "/bin/sh", "-c", "echo 'Installing package...' && sudo pacman -S --noconfirm <package-name>", NULL };
-    
-    // Spawn the command in the embedded terminal
-    vte_terminal_spawn_async(
-        VTE_TERMINAL(terminal),       // The VTE terminal widget
-        VTE_PTY_DEFAULT,              // Use the default pseudo-terminal
-        NULL,                         // Working directory (NULL uses current directory)
-        (char **)command,             // Command to execute
-        NULL,                         // Environment (NULL uses current environment)
-        G_SPAWN_DEFAULT,              // Spawn flags
-        NULL,                         // Child setup function (not needed here)
-        NULL,                         // User data for the setup function
-        NULL,                         // Cancellable object (not needed)
-        -1,                           // Timeout for the operation (-1 means no timeout)
-        NULL,                         // GCancellable (not needed)
-        NULL,                         // Callback for process completion (not needed here)
-        NULL                          // User data for the callback
-    );
+    GtkTreeIter iter;
+    GtkTreeModel *model;
+    gchar *selected_package;
+
+    // Get the selected package from the package list
+    model = gtk_tree_view_get_model(GTK_TREE_VIEW(package_list));
+    if (gtk_tree_selection_get_selected(gtk_tree_view_get_selection(GTK_TREE_VIEW(package_list)), &model, &iter)) {
+        gtk_tree_model_get(model, &iter, 0, &selected_package, -1);
+        
+        // Construct the command to install the selected package
+        gchar *command = g_strdup_printf("sudo pacman -S --noconfirm %s", selected_package);
+        
+        // Feed the command to the terminal (this will execute the command in the terminal)
+        vte_terminal_feed_child(VTE_TERMINAL(terminal), command, strlen(command));
+
+        // Free the allocated memory
+        g_free(command);
+        g_free(selected_package);
+    }
 }
+
 
 void on_uninstall_clicked(GtkWidget *widget, gpointer data) {
-    g_print("Uninstalling package...\n");
-    
-    // Prepare the command to be executed in the terminal
-    const char *command[] = { "/bin/sh", "-c", "echo 'Uninstalling package...' && sudo pacman -R --noconfirm <package-name>", NULL };
-    
-    // Spawn the command in the embedded terminal
-    vte_terminal_spawn_async(
-        VTE_TERMINAL(terminal),       // The VTE terminal widget
-        VTE_PTY_DEFAULT,              // Use the default pseudo-terminal
-        NULL,                         // Working directory (NULL uses current directory)
-        (char **)command,             // Command to execute
-        NULL,                         // Environment (NULL uses current environment)
-        G_SPAWN_DEFAULT,              // Spawn flags
-        NULL,                         // Child setup function (not needed here)
-        NULL,                         // User data for the setup function (unnecessary)
-        NULL,                         // Cancellable object (not needed)
-        -1,                           // Timeout for the operation (-1 means no timeout)
-        NULL,                         // GCancellable (not needed)
-        NULL,                         // Callback for process completion (not needed here)
-        NULL                          // User data for the callback
-    );
-}
+    GtkTreeIter iter;
+    GtkTreeModel *model;
+    gchar *selected_package;
 
+    // Get the selected package from the package list
+    model = gtk_tree_view_get_model(GTK_TREE_VIEW(package_list));
+    if (gtk_tree_selection_get_selected(gtk_tree_view_get_selection(GTK_TREE_VIEW(package_list)), &model, &iter)) {
+        gtk_tree_model_get(model, &iter, 0, &selected_package, -1);
+        
+        // Construct the command to uninstall the selected package
+        gchar *command = g_strdup_printf("sudo pacman -R --noconfirm %s", selected_package);
+        
+        // Feed the command to the terminal
+        vte_terminal_feed_child(VTE_TERMINAL(terminal), command, strlen(command));
+
+        // Free the allocated memory
+        g_free(command);
+        g_free(selected_package);
+    }
+}
 
 // Toggle terminal visibility
 void on_toggle_terminal_clicked(GtkWidget *widget, gpointer data) {
